@@ -3,6 +3,8 @@ const Router = require('./router')
 const logger = require('./logger')
 const { json, createError } = require('micro')
 
+const HOST = process.env.SERVER_HOST || '';
+
 logger.info('Connecting to Postgres Database...')
 
 const pool = new Pool({
@@ -14,7 +16,7 @@ async function query(query, args = []) {
 
   try {
     const result = await pool.query(query, args)
-    return result.rows
+    return serialize(result.rows)
   } catch (e) {
     logger.error('An error ocurred while executing Database query: %s', e.stack, {
       query, args
@@ -32,6 +34,10 @@ async function findTodo(id) {
   }
 
   throw createError(404, `Todo with identifier '${id}'' does not exist.`)
+}
+
+function serialize(todos = []) {
+  return todos.map(todo => ({...todo, url: `${HOST}/${todo.id}`}));
 }
 
 const router = new Router()
