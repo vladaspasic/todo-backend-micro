@@ -9,6 +9,10 @@ function cors(res) {
 
 module.exports = async (req, res) => {
   cors(res);
+
+  if (req.method === 'OPTIONS') {
+    return send(res, 200)
+  }
   
   const { params, handler } = routes.get(req)
 
