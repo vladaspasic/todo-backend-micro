@@ -49,11 +49,11 @@ router.add('get', '/:id', async (params) => {
 
 router.add('post', '/', async (params, req) => {
   const todo = await json(req)
-  const data = await query(`INSERT INTO todos
+  const rows = await query(`INSERT INTO todos
     ("title", "order", "completed") VALUES ($1, $2, false)
     RETURNING *`, [todo.title, todo.order])
 
-  return { status: 201, data }
+  return { status: 201, data: rows[0] || {} }
 })
 
 router.add('patch', '/:id', async (params, req) => {
@@ -72,12 +72,10 @@ router.add('patch', '/:id', async (params, req) => {
     todo.completed = data.completed
   }
 
-  data = await query(`UPDATE todos set "title"=$1, "order"=$2, "completed"=$3 WHERE id=$4 RETURNING *`,
+  const rows = await query(`UPDATE todos set "title"=$1, "order"=$2, "completed"=$3 WHERE id=$4 RETURNING *`,
     [todo.title, todo.order, todo.completed || false, params.id])
 
-  return {
-    data
-  }
+  return { data: rows[0] || {} }
 })
 
 router.add('delete', '/', async () => {
