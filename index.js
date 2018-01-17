@@ -1,4 +1,5 @@
 const routes = require('./routes')
+const logger = require('./logger')
 const { send, createError } = require('micro')
 
 function cors(res) {
@@ -7,7 +8,24 @@ function cors(res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE')
 }
 
-module.exports = async (req, res) => {
+const handleErrors = fn => async (req, res) => {
+  try {
+    return await fn(req, res)
+  } catch (error) {
+    const json = {
+      status: error.statusCode || 500,
+      message: error.message || 'Internal server error, please try again'
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      logger.warn('An error ocurred while handling route `%s`. %s', req.url, error.stack)
+    }
+
+    send(res, json.status, json)
+  }
+}
+
+module.exports = handleErrors(async (req, res) => {
   cors(res);
 
   if (req.method === 'OPTIONS') {
@@ -22,5 +40,5 @@ module.exports = async (req, res) => {
   } else {
     throw createError(404, `Resource for path ${req.url} could not be found`)
   }
-}
+})
 
